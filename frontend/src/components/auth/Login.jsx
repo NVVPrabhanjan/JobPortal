@@ -9,7 +9,7 @@ function Login() {
     const [input, setInput] = useState({
         email:"",
         password:"",
-        role :""
+        role :"recruiter"
     })
     const changeEventHandler = (e) =>{
         setInput({...input, [e.target.name]:e.target.value});
@@ -83,7 +83,9 @@ function Login() {
           <div>
             <Button
               type="submit"
-              className="text-white w-full my-4 bg-black font-bold hover:bg-gray-800"
+              className="text-white w-full my-4 bg-black font-bold hover:bg-gray-800" onClick={()=>{
+                submitHandler() 
+              }}
             >
               Login
             </Button>

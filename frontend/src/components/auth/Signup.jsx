@@ -59,12 +59,13 @@ function Signup() {
     }
 
     try {
-      const res = await axios.post(`${USER_API_END_POINT}/register`, formData, {
+      const res = await axios.post(`http://localhost:8000/api/v1/user/register`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
         withCredentials: true,
       });
+      console.log(res)
 
       if (res.data.success) {
         toast.success(res.data.message);
@@ -72,7 +73,6 @@ function Signup() {
       }
     } catch (error) {
       console.error(error);
-      toast.error(error.response?.data?.message || "Something went wrong!");
     } finally {
       setLoading(false);
     }
