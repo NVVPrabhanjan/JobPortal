@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Navbar from "../shared/Navbar";
 import { Label } from "@radix-ui/react-label";
 import { Input } from "../ui/input";
@@ -6,8 +6,9 @@ import { RadioGroup } from "../ui/radio-group";
 import { Button } from "../ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { USER_API_END_POINT } from "@/utils/constant";
-import { toast } from "@/hooks/use-toast";
 
 function Signup() {
   const [input, setInput] = useState({
@@ -18,30 +19,28 @@ function Signup() {
     role: "student",
     file: "",
   });
-
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
-
 
   const changeEventHandler = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });
   };
 
-
   const changeFileHandler = (e) => {
     const file = e.target.files?.[0];
     if (file && file.size > 5 * 1024 * 1024) {
       toast.error("File size exceeds 5 MB");
+      if (fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
       return;
     }
     setInput({ ...input, file });
   };
 
-
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    if (!input.fullName || !input.email || !input.password || !input.role) {
+    if (!input.fullName || !input.email || !input.password) {
       toast.error("Please fill all required fields.");
       return;
     }
@@ -70,9 +69,12 @@ function Signup() {
       if (res.data.success) {
         toast.success(res.data.message);
         navigate("/login");
+      } else {
+        toast.error(res.data.message || "Registration failed.");
       }
     } catch (error) {
       console.error(error);
+      toast.error(error.response?.data?.message || "Something went wrong!");
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,7 @@ function Signup() {
           onSubmit={submitHandler}
           className="w-1/2 border border-gray-200 rounded-md p-4 my-10"
         >
-          <h1 className="font-bold text-xl mb-5">SignUp</h1>
+          <h1 className="font-bold text-xl mb-5">Sign Up</h1>
           <div className="my-2">
             <Label htmlFor="fullName">Full Name</Label>
             <Input
@@ -162,6 +164,7 @@ function Signup() {
           <div className="flex items-center gap-2 my-4">
             <Label htmlFor="file">Profile Photo</Label>
             <Input
+              ref={fileInputRef}
               accept="image/*"
               type="file"
               id="file"
@@ -176,7 +179,7 @@ function Signup() {
               className="text-white w-full my-4 bg-black font-bold hover:bg-gray-800"
               disabled={loading}
             >
-              {loading ? "Signing Up..." : "Signup"}
+              {loading ? "Signing Up..." : "Sign Up"}
             </Button>
             <span className="text-sm">
               Already have an account?{" "}
