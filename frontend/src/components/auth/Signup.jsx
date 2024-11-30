@@ -31,7 +31,7 @@ function Signup() {
     const file = e.target.files?.[0];
     if (file && file.size > 5 * 1024 * 1024) {
       toast.error("File size exceeds 5 MB");
-      if (fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
     setInput({ ...input, file });
@@ -40,45 +40,31 @@ function Signup() {
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    if (!input.fullName || !input.email || !input.password) {
-      toast.error("Please fill all required fields.");
-      return;
-    }
-
-    setLoading(true);
+    // Accessing role and other form data from the state
+    const { fullName, email, phoneNumber, password, role, file } = input;
 
     const formData = new FormData();
-    formData.append("fullName", input.fullName);
-    formData.append("email", input.email);
-    formData.append("phoneNumber", input.phoneNumber);
-    formData.append("password", input.password);
-    formData.append("role", input.role);
-    if (input.file) {
-      formData.append("file", input.file);
+    formData.append('fullName', fullName);
+    formData.append('email', email);
+    formData.append('phoneNumber', phoneNumber);
+    formData.append('password', password);
+    formData.append('role', role);
+    if (file) {
+        formData.append('file', file);
     }
 
     try {
-      const res = await axios.post(`http://localhost:8000/api/v1/user/register`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        withCredentials: true,
-      });
-      console.log(res)
-
-      if (res.data.success) {
-        toast.success(res.data.message);
+        const response = await axios.post('http://localhost:8000/api/v1/user/register', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        console.log(response.data);
         navigate("/login");
-      } else {
-        toast.error(res.data.message || "Registration failed.");
-      }
     } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Something went wrong!");
-    } finally {
-      setLoading(false);
+        console.error('Error during registration:', error.response?.data || error);
     }
-  };
+};
 
   return (
     <div>
