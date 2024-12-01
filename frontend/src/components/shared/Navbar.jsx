@@ -8,9 +8,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "../ui/button";
+import { useSelector } from "react-redux";
+import store from "@/redux/store";
 
 function Navbar() {
-  const user = false;
+  const {user} = useSelector(store =>store.auth);
   return (
     <div className="bg-white">
       <div className="flex items-center justify-between mx-auto max-w-7xl h-16">
@@ -21,9 +23,9 @@ function Navbar() {
         </div>
         <div>
           <ul className="flex font-medium items-center gap-5">
-            <li>Home</li>
-            <li>Jobs</li>
-            <li>Browse</li>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/jobs">Jobs</Link></li>
+            <li><Link to="/browse">Browse</Link></li>
             {!user ? (
               <div className="flex items-center gap-2">
                 <Link to="/login">
@@ -61,7 +63,7 @@ function Navbar() {
                     </div>
                     <div className="flex gap-5">
                       <Button>
-                        <User2></User2>View Profile
+                        <User2></User2><Link to={"/profile"}>View Profile</Link>
                       </Button>
                       <Button>
                         <LogOut></LogOut>Logout

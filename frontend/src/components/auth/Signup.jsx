@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useDebugValue } from "react";
 import Navbar from "../shared/Navbar";
 import { Label } from "@radix-ui/react-label";
 import { Input } from "../ui/input";
@@ -9,6 +9,9 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { USER_API_END_POINT } from "@/utils/constant";
+import { useDispatch, useSelector } from "react-redux";
+import store from "@/redux/store";
+import { setLoading } from "@/redux/authSlice";
 
 function Signup() {
   const [input, setInput] = useState({
@@ -16,10 +19,11 @@ function Signup() {
     email: "",
     phoneNumber: "",
     password: "",
-    role: "student",
-    file: "",
+    role: "",
+    file: null,
   });
-  const [loading, setLoading] = useState(false);
+  const {loading} = useSelector(store => store.auth);
+  const dispatch = useDispatch();
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -37,34 +41,51 @@ function Signup() {
     setInput({ ...input, file });
   };
 
+  const roleChangeHandler = (e) => {
+    setInput({ ...input, role: e.target.value });
+  };
+
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    // Accessing role and other form data from the state
+    // Destructure input values
     const { fullName, email, phoneNumber, password, role, file } = input;
 
+    if (!role) {
+      toast.error("Please select a role");
+      return;
+    }
+
     const formData = new FormData();
-    formData.append('fullName', fullName);
-    formData.append('email', email);
-    formData.append('phoneNumber', phoneNumber);
-    formData.append('password', password);
-    formData.append('role', role);
+    formData.append("fullName", fullName);
+    formData.append("email", email);
+    formData.append("phoneNumber", phoneNumber);
+    formData.append("password", password);
+    formData.append("role", role);
     if (file) {
-        formData.append('file', file);
+      formData.append("file", file);
     }
 
     try {
-        const response = await axios.post('http://localhost:8000/api/v1/user/register', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-        console.log(response.data);
-        navigate("/login");
+      dispatch(setLoading(true));
+      const response = await axios.post(
+        `${USER_API_END_POINT}/register`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      toast.success(response.data.message || "Signup successful!");
+      navigate("/login");
     } catch (error) {
-        console.error('Error during registration:', error.response?.data || error);
+      toast.error(error.response?.data?.message || "Signup failed!");
+      console.error("Error during registration:", error.response?.data || error);
+    } finally {
+      dispatch(setLoading(true));
     }
-};
+  };
 
   return (
     <div>
@@ -84,6 +105,7 @@ function Signup() {
               name="fullName"
               onChange={changeEventHandler}
               placeholder="Prabhanjan"
+              required
             />
           </div>
           <div className="my-2">
@@ -95,6 +117,7 @@ function Signup() {
               name="email"
               onChange={changeEventHandler}
               placeholder="Prabhanjan@gmail.com"
+              required
             />
           </div>
           <div className="my-2">
@@ -106,6 +129,7 @@ function Signup() {
               name="phoneNumber"
               onChange={changeEventHandler}
               placeholder="+91-7893152309"
+              required
             />
           </div>
           <div className="my-2">
@@ -116,6 +140,7 @@ function Signup() {
               value={input.password}
               name="password"
               onChange={changeEventHandler}
+              required
             />
           </div>
 
@@ -129,7 +154,7 @@ function Signup() {
                   id="r1"
                   value="recruiter"
                   checked={input.role === "recruiter"}
-                  onChange={changeEventHandler}
+                  onChange={roleChangeHandler}
                 />
                 <Label htmlFor="r1">Recruiter</Label>
               </div>
@@ -140,7 +165,7 @@ function Signup() {
                   id="r2"
                   value="student"
                   checked={input.role === "student"}
-                  onChange={changeEventHandler}
+                  onChange={roleChangeHandler}
                 />
                 <Label htmlFor="r2">Student</Label>
               </div>
@@ -160,13 +185,15 @@ function Signup() {
           </div>
 
           <div>
-            <Button
+          {
+              loading ? <Button className="w-full my-4"><Loader2 className="mr-2 h-4 animate-spin"/>Please Wait</Button> :
+              <Button
               type="submit"
               className="text-white w-full my-4 bg-black font-bold hover:bg-gray-800"
-              disabled={loading}
             >
-              {loading ? "Signing Up..." : "Sign Up"}
+              Login
             </Button>
+            }
             <span className="text-sm">
               Already have an account?{" "}
               <Link to="/login" className="text-blue-500">
