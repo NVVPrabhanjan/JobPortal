@@ -139,7 +139,7 @@ const Signup = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true,
       });
-
+      console.log(response);
       if (response.data.success) {
         navigate('/login');
         toast.success(response.data.message);
