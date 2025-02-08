@@ -8,6 +8,7 @@ const companySlice = createSlice({
         searchCompanyByText:"",
     },
     reducers:{
+        // actions
         setSingleCompany:(state,action) => {
             state.singleCompany = action.payload;
         },

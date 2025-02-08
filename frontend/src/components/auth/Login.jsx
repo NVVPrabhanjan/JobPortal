@@ -1,148 +1,219 @@
-import React, { useState } from "react";
-import Navbar from "../shared/Navbar";
-import { Label } from "@radix-ui/react-label";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { toast } from "react-toastify";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { USER_API_END_POINT } from "../../utils/constant.js";
-import { useDispatch, useSelector } from "react-redux";
-import { setLoading, setUser } from "@/redux/authSlice";
-import { Loader2 } from "lucide-react";
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import axios from 'axios';
+import { Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
 
-function Login() {
-  const [input, setInput] = useState({
-    email: "",
-    password: "",
-    role: "",
+import Navbar from '../shared/Navbar';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Button } from '../ui/button';
+import { USER_API_END_POINT } from '@/utils/constant';
+import { setLoading, setUser } from '@/redux/authSlice';
+import { toast } from 'sonner';
+
+const Login = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    role: '',
   });
-  const {loading} = useSelector(store=>store.auth);
+  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const { loading, user } = useSelector((store) => store.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const changeEventHandler = (e) => {
-    setInput({ ...input, [e.target.name]: e.target.value });
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    if (!formData.role) {
+      newErrors.role = 'Please select a role';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const submitHandler = async (e) => {
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: '',
+      }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input.role) {
-        toast.error("Please select a role.");
-        return;
+    
+    if (!validateForm()) {
+      return;
     }
 
     try {
       dispatch(setLoading(true));
-        const res = await axios.post(`${USER_API_END_POINT}/login`, input, {
-            headers: {
-                "Content-Type": "application/json",
-            },
-            withCredentials: true,
-        });
+      const response = await axios.post(`${USER_API_END_POINT}/login`, formData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        withCredentials: true,
+      });
 
-        console.log("API Response:", res.data);
-        if (res.data.success) {
-          dispatch(setUser(res.data.user));
-          navigate("/"); // Navigate to the home page
-            toast.success(res.data.message);
-        } else {
-            toast.error(res.data.message || "Login failed.");
-        }
+      if (response.data.success) {
+        dispatch(setUser(response.data.user));
+        navigate('/');
+        toast.success(response.data.message);
+      }
     } catch (error) {
-        console.error("Error during login:", error.response?.data);
-        toast.error(error.response?.data?.message || "Something went wrong!");
-    }
-    finally{
+      console.error('Login error:', error);
+      toast.error(error.response?.data?.message || 'An error occurred during login');
+    } finally {
       dispatch(setLoading(false));
     }
-};
-  const radioChangeHandler = (e) => {
-    setInput({ ...input, role: e.target.value });
   };
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <ToastContainer />
-      <div className="flex items-center justify-center max-w-7xl mx-auto">
-        <form
-          className="w-1/2 border border-gray-200 rounded-md p-4 my-10"
-          onSubmit={submitHandler}
-        >
-          <h1 className="font-bold text-xl mb-5">Login</h1>
-          <div className="my-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              type="email"
-              id="email"
-              value={input.email}
-              name="email"
-              onChange={changeEventHandler}
-              placeholder="Prabhanjan@gmail.com"
-              required
-            />
+      <div className="flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="bg-white shadow-md rounded-lg p-8">
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Welcome Back</h1>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email Address
+                </Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="email"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
+                    placeholder="your@email.com"
+                    aria-describedby={errors.email ? 'email-error' : undefined}
+                  />
+                  <Mail className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                </div>
+                {errors.email && (
+                  <p id="email-error" className="mt-1 text-sm text-red-500">
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className={`pl-10 ${errors.password ? 'border-red-500' : ''}`}
+                    placeholder="••••••••"
+                    aria-describedby={errors.password ? 'password-error' : undefined}
+                  />
+                  <Lock className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p id="password-error" className="mt-1 text-sm text-red-500">
+                    {errors.password}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Select Role</Label>
+                <RadioGroup 
+                  className="grid grid-cols-2 gap-4 mt-2"
+                  value={formData.role}
+                  onValueChange={(value) => handleInputChange({ target: { name: 'role', value } })}
+                >
+                  <div className="flex items-center space-x-2 bg-gray-50 p-3 rounded-md cursor-pointer hover:bg-gray-100">
+                    <RadioGroupItem value="student" id="student" />
+                    <Label htmlFor="student" className="cursor-pointer">Student</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 bg-gray-50 p-3 rounded-md cursor-pointer hover:bg-gray-100">
+                    <RadioGroupItem value="recruiter" id="recruiter" />
+                    <Label htmlFor="recruiter" className="cursor-pointer">Recruiter</Label>
+                  </div>
+                </RadioGroup>
+                {errors.role && (
+                  <p className="mt-1 text-sm text-red-500">{errors.role}</p>
+                )}
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
+              </Button>
+
+              <p className="text-center text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link 
+                  to="/signup" 
+                  className="font-medium text-purple-600 hover:text-purple-500"
+                >
+                  Sign up
+                </Link>
+              </p>
+            </form>
           </div>
-          <div className="my-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              type="password"
-              id="password"
-              value={input.password}
-              name="password"
-              onChange={changeEventHandler}
-              required
-            />
-          </div>
-          <fieldset className="my-4">
-            <legend className="font-medium mb-2">Select Your Role</legend>
-            <div className="flex gap-4">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="role"
-                  value="Recruiter"
-                  checked={input.role === "Recruiter"}
-                  onChange={radioChangeHandler}
-                  className="form-radio"
-                />
-                <span>Recruiter</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="role"
-                  value="Student"
-                  checked={input.role === "Student"}
-                  onChange={radioChangeHandler}
-                  className="form-radio"
-                />
-                <span>Student</span>
-              </label>
-            </div>
-          </fieldset>
-          <div>
-            {
-              loading ? <Button className="w-full my-4"><Loader2 className="mr-2 h-4 animate-spin"/>Please Wait</Button> :
-              <Button
-              type="submit"
-              className="text-white w-full my-4 bg-black font-bold hover:bg-gray-800"
-            >
-              Login
-            </Button>
-            }
-            <span className="text-sm">
-              Don't have an account?{" "}
-              <Link to="/signup" className="text-blue-500">
-                SignUp
-              </Link>
-            </span>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default Login;
